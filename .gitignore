@@ -1,0 +1,22 @@
+# Configuration files with credentials
+download_config.yaml
+
+# Temporary download directory
+temp_download/
+
+# Python cache & build outputs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Local input/output scratch data
+input/
+output/
+dataset/
+scratch_test_dataset/
+
+# OS specific files
+.DS_Store
+Thumbs.db
