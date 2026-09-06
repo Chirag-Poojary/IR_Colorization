@@ -36,8 +36,9 @@ def main():
     output_downscale_dir = os.path.join(output_dir, 'downscaled_data')
     output_rgb_dir = os.path.join(output_dir, 'rgb_images')
     output_patches_dir = os.path.join(output_dir, 'patches')
+    output_calibrated_dir = os.path.join(output_dir, 'calibrated')   # raw DN -> physical units
 
-    for d in [output_downscale_dir, output_rgb_dir, output_patches_dir]:
+    for d in [output_downscale_dir, output_rgb_dir, output_patches_dir, output_calibrated_dir]:
         os.makedirs(d, exist_ok=True)
 
     logger = setup_logging(output_dir)
@@ -56,29 +57,43 @@ def main():
         band3_path = find_file(input_dir, '_B3')
         band4_path = find_file(input_dir, '_B4')
         band10_path = find_file(input_dir, '_B10')
+        qa_pixel_path = find_file(input_dir, '_QA_PIXEL')
 
-        if not all([band2_path, band3_path, band4_path, band10_path]):
+        if not all([band2_path, band3_path, band4_path, band10_path, qa_pixel_path]):
             logger.warning(f"Skipping {product_id}: Missing required bands.")
             continue
 
         file_prefix = product_id
 
         try:
-            # 1. Merge RGB (30m)
+            # 1. Merge RGB (30m) -- merge_rgb.py now converts DN -> reflectance internally
             rgb_output_path = os.path.join(output_rgb_dir, f'{file_prefix}_rgb_30m.tif')
             run_script('merge_rgb.py', logger, band4_path, band3_path, band2_path, rgb_output_path)
+
+            # 1b. Calibrate raw TIR DN -> Kelvin, before any downscaling touches it
+            calibrated_tir_path = os.path.join(output_calibrated_dir, f'{file_prefix}_tir_kelvin.tif')
+            run_script('calibrate_tir.py', logger, band10_path, calibrated_tir_path)
+
+            # 1c. Build downscaled invalid-pixel-fraction maps (cloud/shadow/fill)
+            qainvalid_100m_path = os.path.join(output_downscale_dir, f'{file_prefix}_qainvalid_100m.tif')
+            run_script('downscale_qa.py', logger, qa_pixel_path, band10_path, qainvalid_100m_path, '3.33')
+
+            qainvalid_200m_path = os.path.join(output_downscale_dir, f'{file_prefix}_qainvalid_200m.tif')
+            run_script('downscale_qa.py', logger, qa_pixel_path, band10_path, qainvalid_200m_path, '6.67')
 
             # 2. Downscale RGB to 100m (3.33x)
             downscaled_rgb_100m = os.path.join(output_downscale_dir, f'{file_prefix}_rgb_100m.tif')
             run_script('downscale.py', logger, rgb_output_path, downscaled_rgb_100m, '3.33')
 
-            # 3. Downscale TIR to 100m (3.33x)
+            # 3. Downscale TIR to 100m (3.33x) -- stays box-average: this is the
+            #    ground-truth target, not a simulated coarser sensor.
             downscaled_tir_100m = os.path.join(output_downscale_dir, f'{file_prefix}_tir_100m.tif')
-            run_script('downscale.py', logger, band10_path, downscaled_tir_100m, '3.33')
+            run_script('downscale.py', logger, calibrated_tir_path, downscaled_tir_100m, '3.33')
 
-            # 4. Downscale TIR to 200m (6.67x)
+            # 4. Downscale TIR to 200m (6.67x) -- PSF + NEdeltaT noise: this is
+            #    the model's input, simulating a genuinely coarser sensor.
             downscaled_tir_200m = os.path.join(output_downscale_dir, f'{file_prefix}_tir_200m.tif')
-            run_script('downscale.py', logger, band10_path, downscaled_tir_200m, '6.67')
+            run_script('downscale.py', logger, calibrated_tir_path, downscaled_tir_200m, '6.67', '--mode', 'psf_thermal')
 
             # 5. Create Coregistered Patches
             run_script('create_patches.py', logger, '--input_dir', output_downscale_dir, '--output_dir', output_patches_dir)

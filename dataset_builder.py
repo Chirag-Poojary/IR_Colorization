@@ -47,6 +47,11 @@ def main():
     parser.add_argument("--raw_dir", default=default_raw_dir, help="Google Drive raw Landsat directory path")
     parser.add_argument("--dataset_dir", default="dataset/train", help="Target dataset output directory")
     parser.add_argument("--force", action="store_true", help="Force re-processing of existing datasets")
+    parser.add_argument("--ood_holdout", nargs='*', default=['Atacama_Winter'],
+                        help="Full scene folder names (e.g. 'Atacama_Winter') to route to a held-out OOD split "
+                             "instead of the training set. Pass each season explicitly if you want multiple.")
+    parser.add_argument("--ood_dataset_dir", default="dataset/ood_holdout",
+                        help="Target directory for OOD-holdout scenes.")
     args = parser.parse_args()
 
     raw_dir = os.path.abspath(args.raw_dir)
@@ -68,7 +73,11 @@ def main():
 
     for scene in scene_folders:
         scene_raw_path = os.path.join(raw_dir, scene)
-        target_patches_dir = os.path.join(dataset_dir, scene)
+        is_holdout = scene in (args.ood_holdout or [])
+        active_dataset_dir = os.path.abspath(args.ood_dataset_dir) if is_holdout else dataset_dir
+        target_patches_dir = os.path.join(active_dataset_dir, scene)
+        if is_holdout:
+            logger.info(f"Scene {scene} is designated OOD holdout -> routing to {active_dataset_dir} instead of the training set.")
 
         # Check if already processed
         if os.path.exists(target_patches_dir) and len(os.listdir(target_patches_dir)) > 0 and not args.force:

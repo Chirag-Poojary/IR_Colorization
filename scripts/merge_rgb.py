@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 from utils.file_utils import validate_extension
 from utils.visualization import percentile_stretch
+from utils.radiometry import sr_dn_to_reflectance
 
 def merge_rgb_bands(red_path, green_path, blue_path, output_rgb_path):
     validate_extension(red_path)
@@ -17,9 +18,9 @@ def merge_rgb_bands(red_path, green_path, blue_path, output_rgb_path):
 
     os.makedirs(os.path.dirname(output_rgb_path), exist_ok=True)
 
-    red = tifffile.imread(red_path)
-    green = tifffile.imread(green_path)
-    blue = tifffile.imread(blue_path)
+    red = sr_dn_to_reflectance(tifffile.imread(red_path))
+    green = sr_dn_to_reflectance(tifffile.imread(green_path))
+    blue = sr_dn_to_reflectance(tifffile.imread(blue_path))
 
     rgb_image = np.stack([red, green, blue], axis=0)
     tifffile.imwrite(output_rgb_path, rgb_image, photometric='rgb')
