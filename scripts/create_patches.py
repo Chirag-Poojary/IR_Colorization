@@ -9,6 +9,7 @@ import cv2
 from utils.logging_utils import setup_logging
 from utils.visualization import percentile_stretch
 from utils.file_utils import find_file, extract_product_id
+from utils.geo import load_scene_geo, scale_transform, patch_transform, patch_bounds_wgs84
 
 def load_rgb(directory):
     """
@@ -42,7 +43,7 @@ def save_as_png(data, path):
     stretched = percentile_stretch(data)
     cv2.imwrite(path, stretched)
 
-def create_patches(input_root, output_root, max_invalid_fraction=0.05):
+def create_patches(input_root, output_root, max_invalid_fraction=0.05, geo_dir=None, stride=128):
     os.makedirs(output_root, exist_ok=True)
     logger = setup_logging(log_name='create_patches', log_dir='output')
     
@@ -95,10 +96,28 @@ def create_patches(input_root, output_root, max_invalid_fraction=0.05):
         h200, w200 = tir_200m.shape[-2:]
         logger.info(f"Generating full dataset patches for {product_id}...")
 
+        # Load scene geo and derive per-resolution transforms (once per product, not per patch)
+        scene_geo = None
+        if geo_dir:
+            geo_json_path = os.path.join(geo_dir, f'{product_id}_native_geo.json')
+            if os.path.exists(geo_json_path):
+                scene_geo = load_scene_geo(geo_json_path)
+            else:
+                logger.warning(f"No native geo metadata found for {product_id} at {geo_json_path}; "
+                               f"patches for this product will be saved without geolocation.")
+
+        transform_200m = crs = None
+        if scene_geo is not None:
+            native_transform = scene_geo['transform']
+            native_shape = (scene_geo['height'], scene_geo['width'])
+            crs = scene_geo['crs']
+            transform_100m = scale_transform(native_transform, native_shape, tir_100m.shape[-2:])
+            transform_200m = scale_transform(native_transform, native_shape, tir_200m.shape[-2:])
+
         count = 0
         rejected = 0
-        for y in range(0, h200 - 256 + 1, 256):
-            for x in range(0, w200 - 256 + 1, 256):
+        for y in range(0, h200 - 256 + 1, stride):
+            for x in range(0, w200 - 256 + 1, stride):
                 patch_200m_tir = tir_200m[..., y:y+256, x:x+256]
 
                 y100, x100 = 2*y, 2*x
@@ -134,6 +153,16 @@ def create_patches(input_root, output_root, max_invalid_fraction=0.05):
                     json.dump({'invalid_fraction_200m': invalid_frac_200m,
                                'invalid_fraction_100m': invalid_frac_100m}, f)
 
+                if scene_geo is not None:
+                    patch_t = patch_transform(transform_200m, row_off=y, col_off=x)
+                    bounds = patch_bounds_wgs84(patch_t, width=256, height=256, crs=crs)
+                    with open(os.path.join(sample_dir, 'geo_meta.json'), 'w') as f:
+                        json.dump({
+                            'crs': crs,
+                            'patch_transform_200m': list(patch_t)[:6],
+                            'bounds_wgs84': bounds,
+                        }, f)
+
                 count += 1
 
         logger.info(f"Successfully created {count} samples for {product_id} ({rejected} rejected for cloud/shadow/fill).")
@@ -148,5 +177,15 @@ if __name__ == '__main__':
     parser.add_argument('--output_dir', type=str, default='output/patches', help='Path to output directory.')
     parser.add_argument('--max_invalid_fraction', type=float, default=0.05,
                         help='Reject a patch if more than this fraction of it is cloud/shadow/fill/no-data.')
+    parser.add_argument('--geo_dir', type=str, default=None,
+                        help='Directory containing {product_id}_native_geo.json files (from driver.py). '
+                             'If omitted, patches are created without geolocation metadata.')
+    parser.add_argument('--stride', type=int, default=128,
+                        help='Patch extraction stride in 200m pixels. '
+                             '128 = 50%% overlap on 256px patches (default). '
+                             '256 = non-overlapping (original behaviour).')
     args = parser.parse_args()
-    create_patches(args.input_dir, args.output_dir, max_invalid_fraction=args.max_invalid_fraction)
+    create_patches(args.input_dir, args.output_dir,
+                   max_invalid_fraction=args.max_invalid_fraction,
+                   geo_dir=args.geo_dir,
+                   stride=args.stride)

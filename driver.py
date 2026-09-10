@@ -3,6 +3,7 @@ import argparse
 import subprocess
 from utils.logging_utils import setup_logging
 from utils.file_utils import find_file
+from utils.geo import read_scene_geo, save_scene_geo
 
 def run_script(script_name, logger, *args):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -37,8 +38,9 @@ def main():
     output_rgb_dir = os.path.join(output_dir, 'rgb_images')
     output_patches_dir = os.path.join(output_dir, 'patches')
     output_calibrated_dir = os.path.join(output_dir, 'calibrated')   # raw DN -> physical units
+    output_geo_dir = os.path.join(output_dir, 'geo')                 # native geo JSON sidecars
 
-    for d in [output_downscale_dir, output_rgb_dir, output_patches_dir, output_calibrated_dir]:
+    for d in [output_downscale_dir, output_rgb_dir, output_patches_dir, output_calibrated_dir, output_geo_dir]:
         os.makedirs(d, exist_ok=True)
 
     logger = setup_logging(output_dir)
@@ -57,13 +59,20 @@ def main():
         band3_path = find_file(input_dir, '_B3')
         band4_path = find_file(input_dir, '_B4')
         band10_path = find_file(input_dir, '_B10')
-        qa_pixel_path = find_file(input_dir, '_QA_PIXEL')
+        qa_pixel_path = find_file(input_dir, 'QA_PIXEL')
 
         if not all([band2_path, band3_path, band4_path, band10_path, qa_pixel_path]):
             logger.warning(f"Skipping {product_id}: Missing required bands.")
             continue
 
         file_prefix = product_id
+
+        # Capture native (30m) georeferencing once per scene, from any raw
+        # band - all bands of one Landsat scene share the same grid.
+        native_geo = read_scene_geo(band10_path)
+        geo_output_path = os.path.join(output_geo_dir, f'{file_prefix}_native_geo.json')
+        save_scene_geo(native_geo, geo_output_path)
+        logger.info(f"Saved native geo metadata for {product_id} to {geo_output_path}")
 
         try:
             # 1. Merge RGB (30m) -- merge_rgb.py now converts DN -> reflectance internally
@@ -96,7 +105,8 @@ def main():
             run_script('downscale.py', logger, calibrated_tir_path, downscaled_tir_200m, '6.67', '--mode', 'psf_thermal')
 
             # 5. Create Coregistered Patches
-            run_script('create_patches.py', logger, '--input_dir', output_downscale_dir, '--output_dir', output_patches_dir)
+            run_script('create_patches.py', logger, '--input_dir', output_downscale_dir,
+                       '--output_dir', output_patches_dir, '--geo_dir', output_geo_dir)
 
             logger.info(f"Successfully generated dataset samples for {product_id}")
 

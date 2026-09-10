@@ -73,7 +73,7 @@ def main():
 
     for scene in scene_folders:
         scene_raw_path = os.path.join(raw_dir, scene)
-        is_holdout = scene in (args.ood_holdout or [])
+        is_holdout = any(scene.startswith(h) for h in (args.ood_holdout or []))
         active_dataset_dir = os.path.abspath(args.ood_dataset_dir) if is_holdout else dataset_dir
         target_patches_dir = os.path.join(active_dataset_dir, scene)
         if is_holdout:
@@ -103,6 +103,9 @@ def main():
             shutil.copy2(src, dst)
 
         # Step 2: Execute local driver.py script
+        # Wipe output/ first so stale downscaled files from the previous scene
+        # don't accumulate and get re-processed by create_patches.py.
+        force_rmtree(output_dir)
         logger.info("Step 2: Executing driver.py preprocessing pipeline...")
         driver_script = os.path.join(base_dir, 'driver.py')
         try:

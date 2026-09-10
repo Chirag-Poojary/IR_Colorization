@@ -17,7 +17,11 @@ def build_invalid_mask(qa_pixel_path, st_b10_raw_path):
     invalid = decode_qa_pixel_invalid(qa)
 
     st_dn = tifffile.imread(st_b10_raw_path)
-    st_fill = (st_dn < ST_VALID_DN_MIN) | (st_dn > ST_VALID_DN_MAX)
+    # USGS C2 L2 ST_B10: the only true fill value is DN == 0.
+    # Using a lower-bound threshold (DN < ST_VALID_DN_MIN = 293) incorrectly
+    # flags legitimate cold pixels in high-altitude or arid-desert scenes
+    # (e.g. Atacama, Ladakh) as invalid, rejecting all their patches.
+    st_fill = (st_dn == 0)
 
     return (invalid | st_fill).astype(np.float32)  # 1.0 = invalid, 0.0 = good
 

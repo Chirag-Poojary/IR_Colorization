@@ -20,6 +20,9 @@ locations:
   - name: Summer
     start_date: '2025-03-01'
     end_date: '2025-05-31'
+  - name: Winter
+    start_date: '2024-11-01'
+    end_date: '2025-01-31'
 - name: NewYorkCity
   latitude: 40.7128
   longitude: -74.006
@@ -27,6 +30,9 @@ locations:
   - name: Winter
     start_date: '2025-12-01'
     end_date: '2026-02-28'
+  - name: Summer
+    start_date: '2025-06-01'
+    end_date: '2025-08-31'
 - name: Punjab
   latitude: 30.901
   longitude: 75.8573
@@ -34,6 +40,9 @@ locations:
   - name: Growing
     start_date: '2025-07-01'
     end_date: '2025-09-30'
+  - name: Rabi
+    start_date: '2024-11-01'
+    end_date: '2025-01-31'
 - name: Iowa
   latitude: 41.878
   longitude: -93.0977
@@ -41,6 +50,9 @@ locations:
   - name: Harvest
     start_date: '2025-09-01'
     end_date: '2025-11-30'
+  - name: Growing
+    start_date: '2025-06-01'
+    end_date: '2025-08-31'
 - name: WesternGhats
   latitude: 10.1632
   longitude: 77.06
@@ -48,6 +60,9 @@ locations:
   - name: Summer
     start_date: '2025-03-01'
     end_date: '2025-05-31'
+  - name: PostMonsoon
+    start_date: '2025-10-01'
+    end_date: '2025-12-31'
 - name: BlackForest
   latitude: 48.05
   longitude: 8.15
@@ -55,6 +70,9 @@ locations:
   - name: Autumn
     start_date: '2025-09-01'
     end_date: '2025-11-30'
+  - name: Summer
+    start_date: '2025-06-01'
+    end_date: '2025-08-31'
 - name: Thar
   latitude: 26.9157
   longitude: 70.9083
@@ -62,6 +80,9 @@ locations:
   - name: Summer
     start_date: '2025-03-01'
     end_date: '2025-05-31'
+  - name: Winter
+    start_date: '2024-11-01'
+    end_date: '2025-01-31'
 - name: Atacama
   latitude: -23.8634
   longitude: -69.1328
@@ -69,6 +90,9 @@ locations:
   - name: Winter
     start_date: '2025-06-01'
     end_date: '2025-08-31'
+  - name: Summer
+    start_date: '2024-12-01'
+    end_date: '2025-02-28'
 - name: Ladakh
   latitude: 34.1526
   longitude: 77.5771
@@ -76,6 +100,9 @@ locations:
   - name: Summer
     start_date: '2025-06-01'
     end_date: '2025-08-31'
+  - name: Spring
+    start_date: '2025-04-01'
+    end_date: '2025-05-31'
 - name: SwissAlps
   latitude: 46.5613
   longitude: 8.3585
@@ -84,6 +111,9 @@ locations:
   - name: Winter
     start_date: '2025-12-01'
     end_date: '2026-02-28'
+  - name: Summer
+    start_date: '2025-07-01'
+    end_date: '2025-09-30'
 - name: Chennai
   latitude: 13.0827
   longitude: 80.2707
@@ -91,6 +121,9 @@ locations:
   - name: Summer
     start_date: '2025-03-01'
     end_date: '2025-05-31'
+  - name: NortheastMonsoon
+    start_date: '2025-10-01'
+    end_date: '2025-12-31'
 - name: Sydney
   latitude: -33.8688
   longitude: 151.2093
@@ -98,6 +131,9 @@ locations:
   - name: Winter
     start_date: '2025-06-01'
     end_date: '2025-08-31'
+  - name: Summer
+    start_date: '2024-12-01'
+    end_date: '2025-02-28'
 - name: Sundarbans
   latitude: 21.9497
   longitude: 89.1833
@@ -105,6 +141,9 @@ locations:
   - name: Summer
     start_date: '2025-03-01'
     end_date: '2025-05-31'
+  - name: Winter
+    start_date: '2024-11-01'
+    end_date: '2025-01-31'
 - name: Everglades
   latitude: 25.2866
   longitude: -80.8987
@@ -112,3 +151,69 @@ locations:
   - name: Winter
     start_date: '2025-12-01'
     end_date: '2026-02-28'
+  - name: Summer
+    start_date: '2025-06-01'
+    end_date: '2025-08-31'
+- name: Sahara
+  latitude: 29.9792
+  longitude: 31.1342
+  seasons:
+  - name: Summer
+    start_date: '2025-06-01'
+    end_date: '2025-08-31'
+  - name: Winter
+    start_date: '2024-12-01'
+    end_date: '2025-02-28'
+- name: Tokyo
+  latitude: 35.6762
+  longitude: 139.6503
+  seasons:
+  - name: Summer
+    start_date: '2025-06-01'
+    end_date: '2025-08-31'
+  - name: Winter
+    start_date: '2024-12-01'
+    end_date: '2025-02-28'
+- name: Amazon
+  latitude: -3.1190
+  longitude: -60.0217
+  cloud_cover: 25
+  seasons:
+  - name: DrySeason
+    start_date: '2025-07-01'
+    end_date: '2025-09-30'
+  - name: WetSeason
+    start_date: '2025-01-01'
+    end_date: '2025-03-31'
+- name: Serengeti
+  latitude: -2.3333
+  longitude: 34.8333
+  seasons:
+  - name: DrySeason
+    start_date: '2025-06-01'
+    end_date: '2025-09-30'
+  - name: GreenSeason
+    start_date: '2024-11-01'
+    end_date: '2025-01-31'
+- name: Yakutsk
+  latitude: 62.0355
+  longitude: 129.6755
+  seasons:
+  - name: Summer
+    start_date: '2025-06-01'
+    end_date: '2025-08-31'
+  - name: Spring
+    start_date: '2025-04-01'
+    end_date: '2025-05-31'
+- name: Patagonia
+  latitude: -50.9423
+  longitude: -73.4068
+  cloud_cover: 25
+  seasons:
+  - name: Summer
+    start_date: '2024-12-01'
+    end_date: '2025-02-28'
+  - name: Autumn
+    start_date: '2025-03-01'
+    end_date: '2025-05-31'
+
