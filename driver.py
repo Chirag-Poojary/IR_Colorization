@@ -1,6 +1,7 @@
 import os
 import argparse
 import subprocess
+import logging
 from utils.logging_utils import setup_logging
 from utils.file_utils import find_file
 from utils.geo import read_scene_geo, save_scene_geo
@@ -28,6 +29,7 @@ def run_script(script_name, logger, *args):
 
 def main():
     parser = argparse.ArgumentParser(description='IR-Colorization Dataset Generation Baseline')
+    parser.add_argument('--scene', default=None, help='Specific scene / product ID to process')
     args = parser.parse_args()
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -49,7 +51,13 @@ def main():
         logger.error(f"Input root directory {input_root} not found.")
         exit(1)
 
-    product_folders = [e for e in os.listdir(input_root) if os.path.isdir(os.path.join(input_root, e))]
+    if args.scene:
+        if not os.path.isdir(os.path.join(input_root, args.scene)):
+            logger.error(f"Scene directory {args.scene} not found in {input_root}.")
+            exit(1)
+        product_folders = [args.scene]
+    else:
+        product_folders = [e for e in os.listdir(input_root) if os.path.isdir(os.path.join(input_root, e))]
 
     for product_id in product_folders:
         input_dir = os.path.join(input_root, product_id)
@@ -114,9 +122,11 @@ def main():
             logger.error(f"Error processing {product_id}: {e}")
 
     logger.info("Dataset generation finished. Samples available in output/patches")
-    for handler in logger.handlers[:]:
-        handler.close()
-        logger.removeHandler(handler)
+    for handler in list(logger.handlers) + list(logging.root.handlers):
+        try:
+            handler.close()
+        except Exception:
+            pass
 
 if __name__ == '__main__':
     main()
